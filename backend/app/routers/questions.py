@@ -15,12 +15,24 @@ router = APIRouter()
 
 
 def _question_to_response(q: Question) -> dict:
+    options = json.loads(q.options)
+    answer = json.loads(q.answer)
+
+    # 修复脏数据：选项为 ["________"] 等占位符的，改为判断题格式
+    if len(options) == 1 and options[0] in ('________', '-----', ''):
+        options = ["正确", "错误"]
+        answer = 0 if answer not in (0, 1) else answer
+
+    # 判断题选项兜底
+    if options == ["正确", "错误"] and not isinstance(answer, int):
+        answer = 0
+
     return {
         "id": q.id,
         "bank_id": q.bank_id,
         "question_text": q.question_text,
-        "options": json.loads(q.options),
-        "answer": json.loads(q.answer),
+        "options": options,
+        "answer": answer,
         "analysis": q.analysis or "",
         "sort_order": q.sort_order,
     }

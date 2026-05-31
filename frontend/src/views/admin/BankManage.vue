@@ -59,7 +59,7 @@
           <div style="margin-top:12px">将 PDF 文件拖到此处，或点击上传</div>
           <template #tip>
             <div style="margin-top:8px;color:#999">
-              PDF 中应包含格式规范的题目（支持选择题、判断题、填空题的自动识别）
+              PDF 中应包含格式规范的题目（支持选择题、判断题的自动识别）
             </div>
           </template>
         </el-upload>
@@ -70,7 +70,7 @@
 
       <!-- Step 2: 预览 -->
       <div v-if="pdfStep === 1" style="max-height:55vh;overflow-y:auto">
-        <el-alert :title="`共提取 ${extractedTotal} 道题目（选择题 ${extractedChoices} / 判断题 ${extractedTF} / 填空题 ${extractedFill}）`"
+        <el-alert :title="`共提取 ${extractedTotal} 道题目（选择题 ${extractedChoices} / 判断题 ${extractedTF}）`"
           type="success" :closable="false" style="margin-bottom:16px" />
 
         <el-tabs v-if="extractedTotal > 0">
@@ -85,12 +85,6 @@
             <div v-for="(q, i) in extractedData.true_false_questions" :key="'t'+i" class="preview-item">
               <strong>{{ i + 1 }}. {{ q.question_text }}</strong>
               <p class="answer">答案: {{ q.answer === 0 ? '正确' : '错误' }}</p>
-            </div>
-          </el-tab-pane>
-          <el-tab-pane :label="`填空题 (${extractedFill})`" v-if="extractedFill > 0">
-            <div v-for="(q, i) in extractedData.fill_blank_questions" :key="'f'+i" class="preview-item">
-              <strong>{{ i + 1 }}. {{ q.question_text }}</strong>
-              <p class="answer">答案: {{ q.answer }}</p>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -123,7 +117,6 @@
               <el-checkbox-group v-model="importTypes">
                 <el-checkbox value="choice" :disabled="extractedChoices === 0">选择题 ({{ extractedChoices }})</el-checkbox>
                 <el-checkbox value="tf" :disabled="extractedTF === 0">判断题 ({{ extractedTF }})</el-checkbox>
-                <el-checkbox value="fill" :disabled="extractedFill === 0">填空题 ({{ extractedFill }})</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
           </template>
@@ -163,18 +156,17 @@ const showPdfDialog = ref(false)
 const pdfStep = ref(0)
 const pdfFile = ref(null)
 const pdfLoading = ref(false)
-const extractedData = ref({ choice_questions: [], true_false_questions: [], fill_blank_questions: [] })
+const extractedData = ref({ choice_questions: [], true_false_questions: [] })
 const importMode = ref('existing')
 const importTargetBankId = ref(null)
-const importTypes = ref(['choice', 'tf', 'fill'])
+const importTypes = ref(['choice', 'tf'])
 const newBankName = ref('')
 const newBankDesc = ref('')
 const importLoading = ref(false)
 
 const extractedChoices = computed(() => extractedData.value.choice_questions?.length || 0)
 const extractedTF = computed(() => extractedData.value.true_false_questions?.length || 0)
-const extractedFill = computed(() => extractedData.value.fill_blank_questions?.length || 0)
-const extractedTotal = computed(() => extractedChoices.value + extractedTF.value + extractedFill.value)
+const extractedTotal = computed(() => extractedChoices.value + extractedTF.value)
 
 async function fetchBanks() {
   loading.value = true
@@ -235,7 +227,7 @@ function handlePdfChange(file) {
 function resetPdfState() {
   pdfStep.value = 0
   pdfFile.value = null
-  extractedData.value = { choice_questions: [], true_false_questions: [], fill_blank_questions: [] }
+  extractedData.value = { choice_questions: [], true_false_questions: [] }
 }
 
 async function parsePdf() {
@@ -256,14 +248,12 @@ async function handleImport() {
     if (!importTargetBankId.value) { ElMessage.warning('请选择目标题库'); return }
     if (importTypes.value.includes('choice')) questionsToImport.push(...extractedData.value.choice_questions)
     if (importTypes.value.includes('tf')) questionsToImport.push(...extractedData.value.true_false_questions)
-    if (importTypes.value.includes('fill')) questionsToImport.push(...extractedData.value.fill_blank_questions)
     if (questionsToImport.length === 0) { ElMessage.warning('请选择要导入的题目类型'); return }
   } else {
     if (!newBankName.value.trim()) { ElMessage.warning('请输入新题库名称'); return }
     questionsToImport = [
       ...extractedData.value.choice_questions,
       ...extractedData.value.true_false_questions,
-      ...extractedData.value.fill_blank_questions,
     ]
   }
 

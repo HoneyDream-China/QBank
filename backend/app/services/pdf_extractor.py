@@ -94,48 +94,14 @@ def _extract_true_false_questions(text: str) -> List[dict]:
     return questions
 
 
-def _extract_fill_blank_questions(text: str) -> List[dict]:
-    questions = []
-    pattern = re.compile(
-        r'(\d+)\s*[\.、\s]\s*((?:(?!\n\s*\d+\s*[\.、\s]).)*?)\s*答案\s*[：:]\s*(.+?)\s*(?=\n\s*\d+\s*[\.、\s]|\n\s*答案|\Z)',
-        re.DOTALL,
-    )
-
-    for match in pattern.finditer(text):
-        raw = match.group(0)
-        # 跳过包含选项标记的误匹配（实为选择题或判断题）
-        if re.search(r'\n[A-F]\s*[\.、]', raw):
-            continue
-
-        stem = _normalize_text(match.group(2))
-        answer = _normalize_text(match.group(3))
-
-        if not stem or not answer or len(stem) < 3:
-            continue
-        has_blank = any(marker in stem for marker in ['____', '___', '___', '（  ）', '()'])
-        if not has_blank and len(stem) < 10:
-            continue
-
-        questions.append({
-            "question_text": stem,
-            "options": [],
-            "answer": answer,
-            "analysis": "",
-            "type": "fill",
-        })
-    return questions
-
-
 def extract_questions_from_pdf(file_bytes: bytes) -> dict:
     text = extract_text_from_pdf(file_bytes)
     choices = _extract_choice_questions(text)
     tf = _extract_true_false_questions(text)
-    fill = _extract_fill_blank_questions(text)
 
     return {
         "choice_questions": choices,
         "true_false_questions": tf,
-        "fill_blank_questions": fill,
-        "total": len(choices) + len(tf) + len(fill),
+        "total": len(choices) + len(tf),
         "raw_text_preview": text[:500],
     }

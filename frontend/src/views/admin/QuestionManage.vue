@@ -30,7 +30,6 @@
             <el-radio value="single">单选题</el-radio>
             <el-radio value="multi">多选题</el-radio>
             <el-radio value="tf">判断题</el-radio>
-            <el-radio value="fill">填空题</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -50,7 +49,7 @@
         </el-form-item>
 
         <!-- 选择题 / 判断题 答案 -->
-        <el-form-item label="正确答案" v-if="qType !== 'fill'">
+        <el-form-item label="正确答案">
           <template v-if="qType === 'single' || qType === 'tf'">
             <el-radio-group v-model="form.singleAnswer">
               <el-radio v-for="(opt, i) in form.options" :key="i" :value="i">{{ labels[i] }}. {{ opt }}</el-radio>
@@ -61,11 +60,6 @@
               <el-checkbox v-for="(opt, i) in form.options" :key="i" :value="i">{{ labels[i] }}. {{ opt }}</el-checkbox>
             </el-checkbox-group>
           </template>
-        </el-form-item>
-
-        <!-- 填空题答案 -->
-        <el-form-item label="答案" v-if="qType === 'fill'">
-          <el-input v-model="form.fillAnswer" placeholder="填空题的标准答案" />
         </el-form-item>
 
         <el-form-item label="解析">
@@ -106,7 +100,6 @@ const defaultForm = () => ({
   options: ['', ''],
   singleAnswer: 0,
   multiAnswer: [],
-  fillAnswer: '',
   analysis: '',
 })
 
@@ -135,7 +128,6 @@ function formatAnswer(ans) {
 }
 
 function detectQuestionType(q) {
-  if (!q.options || q.options.length === 0) return 'fill'
   if (q.options.length === 2 && q.options[0] === '正确' && q.options[1] === '错误') return 'tf'
   if (Array.isArray(q.answer)) return 'multi'
   return 'single'
@@ -153,8 +145,6 @@ function openDialog(q) {
 
     if (qType.value === 'multi') {
       form.multiAnswer = Array.isArray(q.answer) ? [...q.answer] : [q.answer]
-    } else if (qType.value === 'fill') {
-      form.fillAnswer = typeof q.answer === 'string' ? q.answer : String(q.answer)
     } else {
       form.singleAnswer = typeof q.answer === 'number' ? q.answer : (Array.isArray(q.answer) ? q.answer[0] : 0)
     }
@@ -171,10 +161,7 @@ async function handleSave() {
   let answer
   let options = [...form.options]
 
-  if (qType.value === 'fill') {
-    answer = form.fillAnswer
-    options = []
-  } else if (qType.value === 'tf') {
+  if (qType.value === 'tf') {
     options = ['正确', '错误']
     answer = form.singleAnswer
   } else if (qType.value === 'multi') {
@@ -187,7 +174,7 @@ async function handleSave() {
   try {
     const payload = {
       question_text: form.question_text,
-      options: JSON.stringify(options.filter(o => o.trim() || qType.value === 'fill')),
+      options: JSON.stringify(options.filter(o => o.trim())),
       answer: JSON.stringify(answer),
       analysis: form.analysis,
     }

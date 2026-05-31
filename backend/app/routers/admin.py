@@ -58,7 +58,6 @@ async def upload_pdf(
         "filename": file.filename,
         "choice_questions": extracted["choice_questions"],
         "true_false_questions": extracted["true_false_questions"],
-        "fill_blank_questions": extracted["fill_blank_questions"],
         "total": extracted["total"],
         "raw_text_preview": extracted["raw_text_preview"],
     }
@@ -95,9 +94,8 @@ async def import_questions(
         options = q_data.get("options", [])
         answer = q_data.get("answer", 0)
 
-        # 填空题特殊处理：无选项，答案存入 analysis 字段辅助展示
-        if not options:
-            options = ["________"]
+        if not options or len(options) == 0:
+            continue
 
         question = Question(
             bank_id=target_bank_id,
@@ -141,9 +139,10 @@ async def create_bank_with_questions(
 
     for i, q_data in enumerate(questions):
         options = q_data.get("options", [])
-        if not options:
-            options = ["________"]
         answer = q_data.get("answer", 0)
+
+        if not options or len(options) == 0:
+            continue
 
         question = Question(
             bank_id=bank.id,
@@ -207,11 +206,22 @@ def admin_list_questions(bank_id: int, db: Session = Depends(get_db), _: User = 
     if not bank:
         raise HTTPException(status_code=404, detail="题库不存在")
     questions = db.query(Question).filter(Question.bank_id == bank_id).order_by(Question.sort_order, Question.id).all()
-    return [{
-        "id": q.id, "bank_id": q.bank_id, "question_text": q.question_text,
-        "options": json.loads(q.options), "answer": json.loads(q.answer),
-        "analysis": q.analysis or "", "sort_order": q.sort_order,
-    } for q in questions]
+    result = []
+    for q in questions:
+        options = json.loads(q.options)
+        answer = json.loads(q.answer)
+        # 修复脏数据
+        if len(options) == 1 and options[0] in ('________', '-----', ''):
+            options = ["正确", "错误"]
+            answer = 0 if answer not in (0, 1) else answer
+        if options == ["正确", "错误"] and not isinstance(answer, int):
+            answer = 0
+        result.append({
+            "id": q.id, "bank_id": q.bank_id, "question_text": q.question_text,
+            "options": options, "answer": answer,
+            "analysis": q.analysis or "", "sort_order": q.sort_order,
+        })
+    return result
 
 
 @router.post("/banks/{bank_id}/questions")
