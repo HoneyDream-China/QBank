@@ -64,13 +64,18 @@ def _extract_choice_questions(text: str) -> List[dict]:
 def _extract_true_false_questions(text: str) -> List[dict]:
     questions = []
     pattern = re.compile(
-        r'(\d+)\s*[\.、\s]\s*(.*?)\s*'
+        r'(\d+)\s*[\.、\s]\s*((?:(?!\n\s*\d+\s*[\.、\s]).)*?)\s*'
         r'答案\s*[：:]\s*([对错√✓✔×✗✘TFtf])',
         re.DOTALL,
     )
 
     seen = set()
     for match in pattern.finditer(text):
+        raw = match.group(0)
+        # 跳过包含选项标记的误匹配（实为选择题）
+        if re.search(r'\n[A-F]\s*[\.、]', raw):
+            continue
+
         stem = _normalize_text(match.group(2))
         ans = match.group(3).strip()
         is_correct = ans in '对√✓✔Tt'
@@ -86,16 +91,22 @@ def _extract_true_false_questions(text: str) -> List[dict]:
             "analysis": "",
             "type": "tf",
         })
+    return questions
 
 
 def _extract_fill_blank_questions(text: str) -> List[dict]:
     questions = []
     pattern = re.compile(
-        r'(\d+)\s*[\.、\s]\s*(.*?)\s*答案\s*[：:]\s*(.+?)(?=\n\s*\d+\s*[\.、\s]|\Z)',
+        r'(\d+)\s*[\.、\s]\s*((?:(?!\n\s*\d+\s*[\.、\s]).)*?)\s*答案\s*[：:]\s*(.+?)\s*(?=\n\s*\d+\s*[\.、\s]|\n\s*答案|\Z)',
         re.DOTALL,
     )
 
     for match in pattern.finditer(text):
+        raw = match.group(0)
+        # 跳过包含选项标记的误匹配（实为选择题或判断题）
+        if re.search(r'\n[A-F]\s*[\.、]', raw):
+            continue
+
         stem = _normalize_text(match.group(2))
         answer = _normalize_text(match.group(3))
 
@@ -112,6 +123,7 @@ def _extract_fill_blank_questions(text: str) -> List[dict]:
             "analysis": "",
             "type": "fill",
         })
+    return questions
 
 
 def extract_questions_from_pdf(file_bytes: bytes) -> dict:
