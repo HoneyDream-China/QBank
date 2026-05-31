@@ -38,6 +38,9 @@ def health():
 
 
 # serve frontend static files in production
-FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+_p = Path(__file__).resolve().parent.parent
+FRONTEND_DIST = (_p.parent / "frontend" / "dist")  # local: <repo>/frontend/dist
+if not FRONTEND_DIST.exists():
+    FRONTEND_DIST = _p / "frontend" / "dist"        # docker: /app/frontend/dist
 if FRONTEND_DIST.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
