@@ -166,7 +166,7 @@ docker --version
 先把项目推送到 GitHub/Gitee 私有仓库，然后在服务器上：
 
 ```bash
-git clone https://github.com/你的用户名/你的仓库.git
+git clone https://github.com/HoneyDream-China/QBank.git
 cd 你的仓库
 ```
 
