@@ -37,7 +37,7 @@
     </el-dialog>
 
     <!-- PDF 上传弹窗 -->
-    <el-dialog title="PDF 提取题目" v-model="showPdfDialog" width="800px" top="3vh" @close="resetPdfState">
+    <el-dialog title="PDF 提取题目" v-model="showPdfDialog" width="800px" top="5vh" style="max-height:90vh" @close="resetPdfState">
       <el-steps :active="pdfStep" finish-status="success" style="margin-bottom:24px">
         <el-step title="上传PDF" />
         <el-step title="预览提取结果" />
@@ -69,7 +69,7 @@
       </div>
 
       <!-- Step 2: 预览 -->
-      <div v-if="pdfStep === 1">
+      <div v-if="pdfStep === 1" style="max-height:55vh;overflow-y:auto">
         <el-alert :title="`共提取 ${extractedTotal} 道题目（选择题 ${extractedChoices} / 判断题 ${extractedTF} / 填空题 ${extractedFill}）`"
           type="success" :closable="false" style="margin-bottom:16px" />
 

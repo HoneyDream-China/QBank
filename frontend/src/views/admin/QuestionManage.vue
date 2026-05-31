@@ -9,7 +9,7 @@
     </div>
 
     <el-table :data="questions" border stripe v-loading="loading" max-height="580">
-      <el-table-column prop="id" label="ID" width="60" />
+      <el-table-column type="index" label="序号" width="60" />
       <el-table-column prop="question_text" label="题目" min-width="280" show-overflow-tooltip />
       <el-table-column label="答案" width="130">
         <template #default="{ row }">{{ formatAnswer(row.answer) }}</template>
@@ -136,7 +136,7 @@ function formatAnswer(ans) {
 
 function detectQuestionType(q) {
   if (!q.options || q.options.length === 0) return 'fill'
-  if (q.options.length === 2 && (q.options[0] === '正确' || q.options[0] === '正确')) return 'tf'
+  if (q.options.length === 2 && q.options[0] === '正确' && q.options[1] === '错误') return 'tf'
   if (Array.isArray(q.answer)) return 'multi'
   return 'single'
 }

@@ -24,13 +24,13 @@ def _extract_choice_questions(text: str) -> List[dict]:
     questions = []
     pattern = re.compile(
         r'(\d+)\s*[\.、\s]\s*(.*?)'
-        r'A\s*[\.、\s]\s*(.*?)'
-        r'B\s*[\.、\s]\s*(.*?)'
-        r'C\s*[\.、\s]\s*(.*?)'
-        r'(?:D\s*[\.、\s]\s*(.*?))?'
-        r'(?:E\s*[\.、\s]\s*(.*?))?'
-        r'(?:F\s*[\.、\s]\s*(.*?))?'
-        r'答案\s*[：:]\s*([A-Fa-f]+)',
+        r'\nA\s*[\.、]\s*(.*?)'
+        r'\nB\s*[\.、]\s*(.*?)'
+        r'\nC\s*[\.、]\s*(.*?)'
+        r'(?:\nD\s*[\.、]\s*(.*?))?'
+        r'(?:\nE\s*[\.、]\s*(.*?))?'
+        r'(?:\nF\s*[\.、]\s*(.*?))?'
+        r'\n答案\s*[：:]\s*([A-Fa-f]+)',
         re.DOTALL,
     )
 
@@ -46,14 +46,17 @@ def _extract_choice_questions(text: str) -> List[dict]:
 
         if len(answer_str) == 1:
             answer = ord(answer_str) - ord('A')
+            q_type = "single"
         else:
             answer = [ord(ch) - ord('A') for ch in answer_str]
+            q_type = "multi"
 
         questions.append({
             "question_text": stem,
             "options": options,
             "answer": answer,
             "analysis": "",
+            "type": q_type,
         })
     return questions
 
@@ -81,8 +84,8 @@ def _extract_true_false_questions(text: str) -> List[dict]:
             "options": ["正确", "错误"],
             "answer": 0 if is_correct else 1,
             "analysis": "",
+            "type": "tf",
         })
-    return questions
 
 
 def _extract_fill_blank_questions(text: str) -> List[dict]:
@@ -107,8 +110,8 @@ def _extract_fill_blank_questions(text: str) -> List[dict]:
             "options": [],
             "answer": answer,
             "analysis": "",
+            "type": "fill",
         })
-    return questions
 
 
 def extract_questions_from_pdf(file_bytes: bytes) -> dict:
